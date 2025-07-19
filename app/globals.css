@@ -1,0 +1,83 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Print styles for tickets */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  @page {
+    size: A4;
+    margin: 15mm;
+  }
+
+  body {
+    font-size: 12pt;
+    line-height: 1.4;
+    color: #000 !important;
+    background: white !important;
+  }
+
+  .ticket-print {
+    page-break-inside: avoid;
+    border: 2pt solid #e02020; /* Crescendo Red */
+    padding: 20pt;
+    margin-bottom: 20pt;
+    background: white !important;
+  }
+
+  .ticket-print h1 {
+    font-size: 18pt;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 10pt;
+  }
+
+  .ticket-print .ticket-details {
+    margin: 15pt 0;
+  }
+
+  .ticket-print .ticket-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8pt;
+    padding-bottom: 5pt;
+    border-bottom: 1pt solid #ccc;
+  }
+
+  .ticket-print .ticket-number {
+    text-align: center;
+    font-family: monospace;
+    font-size: 14pt;
+    font-weight: bold;
+    margin: 15pt 0;
+    padding: 10pt;
+    border: 1pt solid #000;
+  }
+
+  .ticket-print .qr-placeholder {
+    width: 80pt;
+    height: 80pt;
+    border: 1pt solid #000;
+    margin: 15pt auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 8pt;
+  }
+}
+
+/* Hide elements during print */
+@media print {
+  nav,
+  .no-print,
+  button:not(.print-button) {
+    display: none !important;
+  }
+}
