@@ -209,14 +209,14 @@ export async function verifyPaymentAndCreateTicket(reference: string) {
         pending.status = "completed"
       } else {
         // fallback fallback
-        metadata = {
-          userName: "Fallback User",
-          timeSlotIds: "1",
-          bookingType: "single",
-          phone: "",
-          numberOfPeople: 1,
-          discountApplied: 0,
-          finalAmount: 4000,
+      metadata = {
+        userName: "Fallback User",
+        timeSlotIds: "1",
+        bookingType: "single",
+        phone: "",
+        numberOfPeople: 1,
+        discountApplied: 0,
+        finalAmount: 4000,
         }
       }
     }

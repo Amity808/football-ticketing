@@ -1,6 +1,9 @@
-import { getAvailableTimeSlots } from "./actions"
+import { getAvailableTimeSlots, type TimeSlot } from "./actions"
 import BookingForm from "./components/BookingForm"
 import Image from "next/image"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { Settings } from "lucide-react"
 
 export default async function Home() {
   const slotsResult = await getAvailableTimeSlots()
@@ -20,6 +23,14 @@ export default async function Home() {
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
         <div className="text-center mb-8">
+          <div className="flex justify-end mb-4">
+            <Link href="/admin">
+              <Button variant="outline" size="sm">
+                <Settings className="w-4 h-4 mr-2" />
+                Admin
+              </Button>
+            </Link>
+          </div>
           <Image
             src="/crescendo-logo.png"
             alt="Crescendo Sport Lounge Logo"
@@ -31,7 +42,7 @@ export default async function Home() {
           <p className="text-gray-600">Book your time slot and get your ticket!</p>
         </div>
 
-        <BookingForm timeSlots={slotsResult.data} />
+        <BookingForm timeSlots={(slotsResult.data as TimeSlot[]) || []} />
       </div>
     </div>
   )

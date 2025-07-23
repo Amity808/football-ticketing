@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Search, Users, Clock, CheckCircle, ArrowLeft, Printer } from "lucide-react"
+import { Search, Users, Clock, CheckCircle, ArrowLeft, Printer, DollarSign } from "lucide-react"
 import { markTicketAsUsed, type Ticket } from "../actions"
 import Link from "next/link"
 import { formatNairaSimple } from "@/lib/utils/currency"
@@ -74,9 +74,8 @@ export default function AdminDashboard({ initialTickets }: AdminDashboardProps) 
           <span class="ticket-label">Name:</span>
           <span class="ticket-value">${ticket.user_name}</span>
         </div>
-        ${
-          ticket.time_slot
-            ? `
+        ${ticket.time_slot
+        ? `
           <div class="ticket-row">
             <span class="ticket-label">Date:</span>
             <span class="ticket-value">${formatDate(ticket.time_slot.date)}</span>
@@ -93,23 +92,22 @@ export default function AdminDashboard({ initialTickets }: AdminDashboardProps) 
             <span class="ticket-label">Base Price:</span>
             <span class="ticket-value">${formatNairaSimple(ticket.time_slot.price)}</span>
           </div>
-          ${
-            ticket.discount_applied > 0
-              ? `
+          ${ticket.discount_applied > 0
+          ? `
           <div class="ticket-row">
             <span class="ticket-label">Discount:</span>
             <span class="ticket-value">- ${formatNairaSimple(ticket.discount_applied)}</span>
           </div>
           `
-              : ""
-          }
+          : ""
+        }
           <div class="ticket-row">
             <span class="ticket-label">Total Paid:</span>
             <span class="ticket-value">${formatNairaSimple(ticket.time_slot.price * ticket.number_of_people - ticket.discount_applied)}</span>
           </div>
         `
-            : ""
-        }
+        : ""
+      }
         <div class="ticket-number">
           <div class="ticket-number-value">${ticket.ticket_number}</div>
         </div>
@@ -128,7 +126,7 @@ export default function AdminDashboard({ initialTickets }: AdminDashboardProps) 
       setTimeout(() => {
         printWindow.print()
         printWindow.close()
-      }, 100) // 100ms delay
+      }, 10000) // 8000ms delay
     }
   }
 
@@ -140,10 +138,11 @@ export default function AdminDashboard({ initialTickets }: AdminDashboardProps) 
 
   const activeTickets = tickets.filter((t) => t.status === "active").length
   const usedTickets = tickets.filter((t) => t.status === "used").length
-  const todayTickets = tickets.filter((t) => {
-    if (!t.time_slot) return false
-    return t.time_slot.date === new Date().toISOString().split("T")[0]
-  }).length
+  const totalRevenue = tickets.reduce((sum, ticket) => {
+    if (!ticket.time_slot) return sum
+    const ticketTotal = (ticket.time_slot.price * ticket.number_of_people) - ticket.discount_applied
+    return sum + ticketTotal
+  }, 0)
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -211,11 +210,11 @@ export default function AdminDashboard({ initialTickets }: AdminDashboardProps) 
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Today's Bookings</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-crescendo-dark">{todayTickets}</div>
+            <div className="text-2xl font-bold text-crescendo-dark">{formatNairaSimple(totalRevenue)}</div>
           </CardContent>
         </Card>
       </div>
