@@ -130,13 +130,19 @@ export default function TicketDisplay({ ticket, onBack }: TicketDisplayProps) {
     <style>
       @media print {
         @page {
-          size: A4;
-          margin: 20mm;
+          size: 58mm auto;
+          margin: 0;
         }
+        html, body { width: 58mm; }
         body {
           font-family: Arial, sans-serif;
           line-height: 1.4;
           color: #000;
+          font-size: 11px;
+          margin: 0;
+          padding: 0;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
         }
       }
       
@@ -153,6 +159,9 @@ export default function TicketDisplay({ ticket, onBack }: TicketDisplayProps) {
         border-radius: 8px;
         overflow: hidden;
         background: white;
+        width: 100%;
+        max-width: 58mm;
+        margin: 0 auto;
       }
       
       .ticket-header {
@@ -164,7 +173,7 @@ export default function TicketDisplay({ ticket, onBack }: TicketDisplayProps) {
       
       .ticket-header h1 {
         margin: 0;
-        font-size: 24px;
+        font-size: 18px;
         font-weight: bold;
       }
       
@@ -174,14 +183,14 @@ export default function TicketDisplay({ ticket, onBack }: TicketDisplayProps) {
       }
       
       .ticket-content {
-        padding: 30px;
+        padding: 16px;
       }
       
       .ticket-row {
         display: flex;
         justify-content: space-between;
-        margin-bottom: 15px;
-        padding-bottom: 10px;
+        margin-bottom: 10px;
+        padding-bottom: 8px;
         border-bottom: 1px solid #e5e7eb;
       }
       
@@ -215,22 +224,22 @@ export default function TicketDisplay({ ticket, onBack }: TicketDisplayProps) {
       
       .ticket-number-value {
         font-family: 'Courier New', monospace;
-        font-size: 18px;
+        font-size: 16px;
         font-weight: bold;
         letter-spacing: 2px;
       }
       
       .qr-section {
         text-align: center;
-        margin: 30px 0;
-        padding: 20px;
+        margin: 20px 0;
+        padding: 12px;
         border: 2px dashed #d1d5db;
         border-radius: 8px;
       }
       
       .qr-placeholder {
-        width: 120px;
-        height: 120px;
+        width: 32mm;
+        height: 32mm;
         margin: 0 auto 10px;
         border: 2px solid #e5e7eb;
         display: flex;
@@ -242,8 +251,8 @@ export default function TicketDisplay({ ticket, onBack }: TicketDisplayProps) {
       }
       
       .instructions {
-        margin-top: 30px;
-        padding: 20px;
+        margin-top: 20px;
+        padding: 12px;
         background: #fef3c7;
         border-radius: 6px;
         border-left: 4px solid #f59e0b;
@@ -252,7 +261,7 @@ export default function TicketDisplay({ ticket, onBack }: TicketDisplayProps) {
       .instructions h3 {
         margin: 0 0 10px 0;
         color: #92400e;
-        font-size: 16px;
+        font-size: 14px;
       }
       
       .instructions ul {
@@ -267,10 +276,10 @@ export default function TicketDisplay({ ticket, onBack }: TicketDisplayProps) {
       
       .footer {
         text-align: center;
-        margin-top: 30px;
-        padding-top: 20px;
+        margin-top: 20px;
+        padding-top: 12px;
         border-top: 2px solid #e5e7eb;
-        font-size: 12px;
+        font-size: 10px;
         color: #6b7280;
       }
       
@@ -278,7 +287,7 @@ export default function TicketDisplay({ ticket, onBack }: TicketDisplayProps) {
         display: inline-block;
         padding: 4px 12px;
         border-radius: 20px;
-        font-size: 12px;
+        font-size: 10px;
         font-weight: bold;
         text-transform: uppercase;
       }
@@ -309,9 +318,8 @@ export default function TicketDisplay({ ticket, onBack }: TicketDisplayProps) {
           <span class="ticket-value">${ticket.user_name}</span>
         </div>
         
-        ${
-          ticket.time_slot
-            ? `
+        ${ticket.time_slot
+        ? `
           <div class="ticket-row">
             <span class="ticket-label">Date:</span>
             <span class="ticket-value">${formatDate(ticket.time_slot.date)}</span>
@@ -331,23 +339,22 @@ export default function TicketDisplay({ ticket, onBack }: TicketDisplayProps) {
             <span class="ticket-label">Base Price:</span>
             <span class="ticket-value">${formatNairaSimple(ticket.time_slot.price)}</span>
           </div>
-          ${
-            ticket.discount_applied > 0
-              ? `
+          ${ticket.discount_applied > 0
+          ? `
           <div class="ticket-row">
             <span class="ticket-label">Discount:</span>
             <span class="ticket-value">- ${formatNairaSimple(ticket.discount_applied)}</span>
           </div>
           `
-              : ""
-          }
+          : ""
+        }
           <div class="ticket-row">
             <span class="ticket-label">Total Paid:</span>
             <span class="ticket-value">${formatNairaSimple(ticket.time_slot.price * ticket.number_of_people - ticket.discount_applied)}</span>
           </div>
         `
-            : ""
-        }
+        : ""
+      }
         
         <div class="ticket-row">
           <span class="ticket-label">Status:</span>
