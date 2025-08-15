@@ -36,31 +36,51 @@ const memoryPendingPayments: { reference: string; metadata: any; status: string 
 
 export async function getAvailableTimeSlots(): Promise<{ success: boolean; data: TimeSlot[]; error?: string }> {
   try {
+    console.log("🔍 getAvailableTimeSlots called")
+    console.log("📡 supabaseAdmin exists:", !!supabaseAdmin)
     if (supabaseAdmin) {
       // Attempt Supabase fetch; if it fails (network/env), fall back gracefully
       try {
+        console.log("🚀 Attempting Supabase fetch...")
+        console.log("📅 Today's date:", new Date().toISOString().split("T")[0])
+
+        // First, let's see what's in the table with no filters
+        const { data: allData, error: allError } = await supabaseAdmin
+          .from("time_slots")
+          .select("*")
+
+        console.log("🔍 All data in table:", { count: allData?.length, error: allError })
+        if (allData && allData.length > 0) {
+          console.log("📋 Raw table data:", allData.slice(0, 3))
+        }
+
+        // Now try with just the available_spots filter
         const { data, error } = await supabaseAdmin
           .from("time_slots")
           .select("*")
-          .gte("date", new Date().toISOString().split("T")[0])
           .gt("available_spots", 0)
           .order("date", { ascending: true })
           .order("time", { ascending: true })
 
+        console.log("📊 Supabase response:", { data: data?.length, error })
+        if (data && data.length > 0) {
+          console.log("📋 First few rows:", data.slice(0, 3))
+        }
         if (error) throw error
         return { success: true, data: (data as unknown as TimeSlot[]) || [] }
       } catch (err) {
-        console.warn("Supabase fetch for time slots failed. Using fallback.", {
+        console.warn("⚠️ Supabase fetch failed, using fallback:", {
           message: (err as any)?.message || String(err),
         })
         return { success: true, data: memoryTimeSlots.filter((slot) => slot.available_spots > 0) }
       }
     } else {
+      console.log("🔄 No Supabase admin, using fallback mode")
       // Fallback mode
       return { success: true, data: memoryTimeSlots.filter((slot) => slot.available_spots > 0) }
     }
   } catch (error) {
-    console.error("Unexpected error fetching time slots. Using fallback.", {
+    console.error("💥 Unexpected error, using fallback:", {
       message: (error as any)?.message || String(error),
     })
     return {
@@ -73,6 +93,7 @@ export async function getAvailableTimeSlots(): Promise<{ success: boolean; data:
 
 export async function initiatePayment(formData: FormData) {
   try {
+    console.log("💰 initiatePayment called")
     const userName = formData.get("userName") as string
     const timeSlotId = formData.get("timeSlotId") as string
     const timeSlotIds = formData.get("timeSlotIds") as string
@@ -82,7 +103,10 @@ export async function initiatePayment(formData: FormData) {
     const numberOfPeople = Number.parseInt(formData.get("numberOfPeople") as string) || 1
     const discountCode = (formData.get("discountCode") as string) || ""
 
+    console.log("📝 Form data:", { userName, timeSlotId, timeSlotIds, email, phone, bookingType, numberOfPeople, discountCode })
+
     if (!userName || (!timeSlotId && !timeSlotIds) || !email || numberOfPeople < 1) {
+      console.log("❌ Validation failed:", { hasUserName: !!userName, hasTimeSlot: !!(timeSlotId || timeSlotIds), hasEmail: !!email, numberOfPeople })
       return { success: false, error: "Missing required fields or invalid number of people" }
     }
 
@@ -95,6 +119,8 @@ export async function initiatePayment(formData: FormData) {
       slotsToBook = [timeSlotId]
     }
 
+    console.log("🎯 Slots to book:", slotsToBook)
+
     // Calculate total base amount and validate slots
     for (const slotId of slotsToBook) {
       let timeSlot: TimeSlot | undefined
@@ -102,6 +128,7 @@ export async function initiatePayment(formData: FormData) {
       if (supabaseAdmin) {
         const { data, error } = await supabaseAdmin.from("time_slots").select("*").eq("id", slotId).single()
         if (error || !data) {
+          console.log("❌ Time slot not found:", { slotId, error })
           return { success: false, error: `Time slot ${slotId} not found` }
         }
         timeSlot = data as unknown as TimeSlot
@@ -110,15 +137,19 @@ export async function initiatePayment(formData: FormData) {
       }
 
       if (!timeSlot) {
+        console.log("❌ Time slot not found in memory:", slotId)
         return { success: false, error: `Time slot ${slotId} not found` }
       }
 
       if (timeSlot.available_spots < numberOfPeople) {
+        console.log("❌ Not enough spots:", { available: timeSlot.available_spots, requested: numberOfPeople })
         return { success: false, error: `Not enough spots available for ${timeSlot.time}` }
       }
 
       totalBaseAmount += timeSlot.price * numberOfPeople
     }
+
+    console.log("💵 Total base amount:", totalBaseAmount)
 
     let discountAmount = 0
     if (discountCode.toUpperCase() === "SAVE10") {
@@ -126,27 +157,68 @@ export async function initiatePayment(formData: FormData) {
     }
 
     const finalAmount = totalBaseAmount - discountAmount
+    console.log("🎫 Final amount after discount:", finalAmount)
 
     // Generate payment reference
     const paymentReference = `PAY_${Date.now()}_${Math.random().toString(36).substring(2, 8).toUpperCase()}`
+    console.log("🔑 Payment reference:", paymentReference)
 
     // Store metadata in Supabase for later verification
     if (supabaseAdmin) {
-      const { error: insertError } = await supabaseAdmin.from("pending_payments").insert({
-        reference: paymentReference,
-        metadata: {
-          userName,
-          timeSlotIds: slotsToBook.join(","),
-          bookingType,
-          phone,
-          numberOfPeople,
-          discountApplied: discountAmount,
-          finalAmount,
-        },
-        status: "pending",
-      })
-      if (insertError) throw insertError
+      console.log("💾 Storing metadata in Supabase...")
+      try {
+        const { error: insertError } = await supabaseAdmin.from("pending_payments").insert({
+          reference: paymentReference,
+          metadata: {
+            userName,
+            timeSlotIds: slotsToBook.join(","),
+            bookingType,
+            phone,
+            numberOfPeople,
+            discountApplied: discountAmount,
+            finalAmount,
+          },
+          status: "pending",
+        })
+        if (insertError) {
+          console.log("❌ Failed to insert pending payment:", insertError)
+          // Fall back to memory storage if Supabase fails
+          console.log("🔄 Falling back to memory storage...")
+          memoryPendingPayments.push({
+            reference: paymentReference,
+            metadata: {
+              userName,
+              timeSlotIds: slotsToBook.join(","),
+              bookingType,
+              phone,
+              numberOfPeople,
+              discountApplied: discountAmount,
+              finalAmount,
+            },
+            status: "pending",
+          })
+        } else {
+          console.log("✅ Pending payment stored in Supabase")
+        }
+      } catch (dbError) {
+        console.log("❌ Database error, using memory fallback:", dbError)
+        // Fall back to memory storage
+        memoryPendingPayments.push({
+          reference: paymentReference,
+          metadata: {
+            userName,
+            timeSlotIds: slotsToBook.join(","),
+            bookingType,
+            phone,
+            numberOfPeople,
+            discountApplied: discountAmount,
+            finalAmount,
+          },
+          status: "pending",
+        })
+      }
     } else {
+      console.log("💾 Storing metadata in memory...")
       // Fallback mode: persist metadata in memory
       memoryPendingPayments.push({
         reference: paymentReference,
@@ -161,19 +233,25 @@ export async function initiatePayment(formData: FormData) {
         },
         status: "pending",
       })
+      console.log("✅ Pending payment stored in memory")
     }
 
     // In a real app, you would integrate with Paystack here
+    console.log("🚀 Simulating Paystack initialization...")
     const paystackResponse = await simulatePaystackInitialization({
       email,
       amount: finalAmount * 100, // Paystack expects amount in kobo
       reference: paymentReference,
     })
 
+    console.log("📱 Paystack response:", paystackResponse)
+
     if (!paystackResponse.success) {
+      console.log("❌ Paystack initialization failed")
       return { success: false, error: "Failed to initialize payment" }
     }
 
+    console.log("✅ Payment initiated successfully")
     return {
       success: true,
       data: {
@@ -204,17 +282,40 @@ export async function verifyPaymentAndCreateTicket(reference: string) {
 
     let metadata: any = null
     if (supabaseAdmin) {
-      const { data, error } = await supabaseAdmin
-        .from("pending_payments")
-        .select("metadata")
-        .eq("reference", reference)
-        .single()
-      if (error || !data) {
-        // If metadata not found in DB, it's an issue
-        console.error("Metadata not found in DB for reference:", reference, error)
-        return { success: false, error: "Payment metadata not found" }
+      try {
+        const { data, error } = await supabaseAdmin
+          .from("pending_payments")
+          .select("metadata")
+          .eq("reference", reference)
+          .single()
+        if (error || !data) {
+          // If metadata not found in DB, check memory storage
+          console.log("📋 Metadata not found in DB, checking memory storage...")
+          const pending = memoryPendingPayments.find((p) => p.reference === reference)
+          if (pending) {
+            console.log("✅ Found metadata in memory storage")
+            metadata = pending.metadata
+            pending.status = "completed"
+          } else {
+            console.error("❌ Metadata not found in DB or memory for reference:", reference)
+            return { success: false, error: "Payment metadata not found" }
+          }
+        } else {
+          metadata = data.metadata
+        }
+      } catch (dbError) {
+        console.log("❌ Database error during verification, checking memory:", dbError)
+        // Fall back to memory storage
+        const pending = memoryPendingPayments.find((p) => p.reference === reference)
+        if (pending) {
+          console.log("✅ Found metadata in memory storage")
+          metadata = pending.metadata
+          pending.status = "completed"
+        } else {
+          console.error("❌ Metadata not found in memory for reference:", reference)
+          return { success: false, error: "Payment metadata not found" }
+        }
       }
-      metadata = data.metadata
     } else {
       // Fallback mode: retrieve metadata from memory
       const pending = memoryPendingPayments.find((p) => p.reference === reference)

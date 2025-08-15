@@ -378,16 +378,7 @@ export default function TicketDisplay({ ticket, onBack }: TicketDisplayProps) {
           </div>
         </div>
         
-        <div class="instructions">
-          <h3>Important Instructions:</h3>
-          <ul>
-            <li>Arrive 15 minutes before your scheduled time</li>
-            <li>Bring appropriate sports attire and footwear</li>
-            <li>Present this ticket at the entrance</li>
-            <li>Ticket is valid only for the specified date and time</li>
-            <li>No refunds for missed sessions</li>
-          </ul>
-        </div>
+        
         
         <div class="footer">
           <p><strong>Crescendo Sport Lounge</strong></p>
@@ -402,6 +393,17 @@ export default function TicketDisplay({ ticket, onBack }: TicketDisplayProps) {
 
     printWindow.document.write(printContent)
     printWindow.document.close()
+
+    // <div class="instructions">
+    //       <h3>Important Instructions:</h3>
+    //       <ul>
+    //         <li>Arrive 15 minutes before your scheduled time</li>
+    //         <li>Bring appropriate sports attire and footwear</li>
+    //         <li>Present this ticket at the entrance</li>
+    //         <li>Ticket is valid only for the specified date and time</li>
+    //         <li>No refunds for missed sessions</li>
+    //       </ul>
+    //     </div>
 
     // Use a small timeout to ensure the content is rendered before printing
     // This often helps with inconsistent print behavior across browsers
